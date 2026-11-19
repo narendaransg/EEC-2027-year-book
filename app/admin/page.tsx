@@ -38,7 +38,7 @@ export default async function AdminPage() {
 
   const { data: profiles, error } = await supabaseAdmin
     .from('profiles')
-    .select('id, full_name, branch, house, portrait_url, created_at')
+    .select('*')
     .order('created_at', { ascending: false });
 
   return (
@@ -80,34 +80,47 @@ export default async function AdminPage() {
           </p>
         ) : (
           <div className="space-y-3">
-            {profiles.map((profile) => (
-              <div
-                key={profile.id}
-                className="flex items-center justify-between bg-zinc-900/90 border border-amber-500/25 p-4 gap-4"
-              >
-                <div>
-                  <h2 className="text-lg text-amber-200">{profile.full_name}</h2>
-                  <p className="text-xs text-amber-100/70">
-                    {profile.branch} • {profile.house}
-                  </p>
-                </div>
+            {profiles.map((row: Record<string, unknown>) => {
+              const id = String(row.id || '');
+              const displayName = String(
+                row.name || row.nickname || row.full_name || 'Unnamed Chronicle'
+              );
+              const houseLabel = String(row.house_name || row.house || '');
+              const meta = [row.branch, houseLabel, row.nickname]
+                .filter(Boolean)
+                .map(String)
+                .join(' • ');
+              const portraitUrl = String(row.portrait_url || '');
 
-                <form action={deleteProfile}>
-                  <input type="hidden" name="id" value={profile.id} />
-                  <input
-                    type="hidden"
-                    name="portrait_url"
-                    value={profile.portrait_url || ''}
-                  />
-                  <button
-                    type="submit"
-                    className="bg-red-900/80 hover:bg-red-800 text-red-50 px-4 py-2 text-xs uppercase tracking-widest font-bold cursor-pointer"
-                  >
-                    Delete
-                  </button>
-                </form>
-              </div>
-            ))}
+              return (
+                <div
+                  key={id}
+                  className="flex items-center justify-between bg-zinc-900/90 border border-amber-500/25 p-4 gap-4"
+                >
+                  <div>
+                    <h2 className="text-lg text-amber-200">{displayName}</h2>
+                    {meta && (
+                      <p className="text-xs text-amber-100/70">{meta}</p>
+                    )}
+                  </div>
+
+                  <form action={deleteProfile}>
+                    <input type="hidden" name="id" value={id} />
+                    <input
+                      type="hidden"
+                      name="portrait_url"
+                      value={portraitUrl}
+                    />
+                    <button
+                      type="submit"
+                      className="bg-red-900/80 hover:bg-red-800 text-red-50 px-4 py-2 text-xs uppercase tracking-widest font-bold cursor-pointer"
+                    >
+                      Delete
+                    </button>
+                  </form>
+                </div>
+              );
+            })}
           </div>
         )}
       </div>
