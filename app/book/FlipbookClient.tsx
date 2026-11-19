@@ -372,7 +372,6 @@ const ChroniclePage = React.forwardRef<
             unit: 'px',
             format: [520, 720],
             orientation: 'portrait',
-            hotfixes: ['px_scaling'],
           },
         })
         .from(container)
@@ -647,7 +646,6 @@ export default function FlipbookClient({
             unit: 'px',
             format: [520, 720],
             orientation: 'portrait',
-            hotfixes: ['px_scaling'],
           },
         })
         .from(wrapper)
