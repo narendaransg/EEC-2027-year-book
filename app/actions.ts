@@ -4,16 +4,19 @@ import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 
 export async function verifyPasscode(formData: FormData) {
-  const passcode = String(formData.get('passcode') || '').trim();
-  const expected = process.env.BATCH_PASSCODE;
+  const raw = String(formData.get("passcode") || "");
+  const passcode = raw.replace(/[\s\u200B-\u200D\uFEFF]/g, "").toLowerCase();
+  const expected = String(process.env.BATCH_PASSCODE || "")
+    .replace(/[\s\u200B-\u200D\uFEFF]/g, "")
+    .toLowerCase();
 
   if (expected && passcode === expected) {
     const cookieStore = await cookies();
-    cookieStore.set('citadel_access', 'granted', {
+    cookieStore.set("citadel_access", "granted", {
       httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax',
-      path: '/',
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "lax",
+      path: "/",
       maxAge: 60 * 60 * 24 * 30,
     });
     return { success: true };

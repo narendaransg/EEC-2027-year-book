@@ -1,6 +1,7 @@
 import { verifyPasscode } from './actions';
 import { redirect } from 'next/navigation';
 import { cookies } from 'next/headers';
+import PasscodeInput from './components/PasscodeInput';
 
 export default async function Gatekeeper({
   searchParams,
@@ -64,13 +65,7 @@ export default async function Gatekeeper({
           }}
           className="flex flex-col gap-4"
         >
-          <input
-            type="password"
-            name="passcode"
-            placeholder="Enter the batch passcode"
-            className="p-3 bg-[#fdf6e7]/80 border border-[#5c3118]/50 text-[#1f1008] text-center"
-            required
-          />
+          <PasscodeInput />
 
           <button
             type="submit"
