@@ -90,9 +90,7 @@ export default function WesterosMap({ profiles }: { profiles: ProfileItem[] }) {
       ? plottedMembers
       : plottedMembers.filter((d) => d.stronghold.key === activeHouse);
 
-  const activeStrongholds = STRONGHOLDS.filter((sh) =>
-    plottedMembers.some((d) => d.stronghold.key === sh.key)
-  );
+  const activeStrongholds = STRONGHOLDS.filter((sh) => !["mormont", "bolton"].includes(sh.key));
 
   return (
     <section className="mt-12 border border-amber-500/30 bg-black/75 backdrop-blur-sm rounded-sm p-5 md:p-7 shadow-2xl">
@@ -149,7 +147,7 @@ export default function WesterosMap({ profiles }: { profiles: ProfileItem[] }) {
             className="w-full h-auto block select-none brightness-95 contrast-105"
           />
 
-          {activeStrongholds.map((sh) => (
+          {STRONGHOLDS.map((sh) => (
             <div
               key={sh.key}
               style={{ left: `${sh.x}%`, top: `${sh.y}%` }}
