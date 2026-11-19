@@ -41,7 +41,7 @@ export default function NedGuide({ mode }: NedGuideProps) {
           className="pointer-events-auto relative w-64 sm:w-72 p-4 rounded-sm border-2 border-[#5c3118] text-[#24140c] font-serif"
         >
           <div className="flex items-center justify-between border-b border-[#5c3118]/40 pb-1.5 mb-2">
-            <span className="text-[11px] font-bold uppercase tracking-widest text-[#6e2612]">
+            <span className="text-xs font-bold uppercase tracking-widest text-[#6e2612]">
               Lord Eddard Stark
             </span>
             <button
@@ -54,11 +54,11 @@ export default function NedGuide({ mode }: NedGuideProps) {
             </button>
           </div>
 
-          <p className="text-xs leading-relaxed min-h-[60px]">
+          <p className="text-base leading-relaxed leading-relaxed min-h-[60px]">
             &ldquo;{tips[step]}&rdquo;
           </p>
 
-          <div className="flex items-center justify-between mt-3 pt-2 border-t border-[#5c3118]/30 text-[10px]">
+          <div className="flex items-center justify-between mt-3 pt-2 border-t border-[#5c3118]/30 text-xs">
             <span className="text-[#5c3118] font-bold">
               {step + 1} / {tips.length}
             </span>
@@ -96,7 +96,7 @@ export default function NedGuide({ mode }: NedGuideProps) {
           className="w-24 sm:w-28 h-auto object-contain drop-shadow-[0_12px_20px_rgba(0,0,0,0.95)] transition-transform group-hover:scale-105"
         />
         {!open && (
-          <span className="absolute -top-2 -left-2 bg-[#6e2612] text-amber-100 text-[10px] font-bold px-2 py-0.5 rounded-full border border-amber-400/60 shadow">
+          <span className="absolute -top-2 -left-2 bg-[#6e2612] text-amber-100 text-xs font-bold px-2 py-0.5 rounded-full border border-amber-400/60 shadow">
             Guide
           </span>
         )}
