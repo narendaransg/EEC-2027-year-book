@@ -1,0 +1,46 @@
+@import "tailwindcss";
+
+@theme {
+  --font-display: var(--font-cinzel), Georgia, serif;
+  --font-serif: var(--font-im-fell), Georgia, serif;
+}
+
+@keyframes flameFlicker {
+  0%, 100% {
+    opacity: 0.72;
+    transform: scaleY(1) translateY(0px);
+  }
+  50% {
+    opacity: 0.95;
+    transform: scaleY(1.08) translateY(-6px);
+  }
+}
+
+@keyframes emberRise {
+  0% {
+    transform: translateY(0) scale(1);
+    opacity: 0;
+  }
+  20% {
+    opacity: 0.9;
+  }
+  100% {
+    transform: translateY(-220px) translateX(20px) scale(0.3);
+    opacity: 0;
+  }
+}
+
+.flame-glow {
+  animation: flameFlicker 2.8s ease-in-out infinite;
+}
+
+.ember {
+  position: absolute;
+  bottom: 0;
+  width: 4px;
+  height: 4px;
+  border-radius: 9999px;
+  background: #fbbf24;
+  box-shadow: 0 0 8px 2px #ea580c;
+  animation: emberRise 4s linear infinite;
+}
