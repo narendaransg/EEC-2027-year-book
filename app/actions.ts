@@ -14,3 +14,9 @@ export async function verifyPasscode(formData: FormData) {
   }
   return { success: false }
 }
+
+export async function logoutCitadel() {
+  const cookieStore = await cookies();
+  cookieStore.delete('citadel_access');
+  redirect('/');
+}
