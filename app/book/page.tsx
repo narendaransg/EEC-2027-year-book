@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { supabaseAdmin } from '@/lib/supabase';
 import { logoutCitadel } from '@/app/actions';
 import FlipbookClient, { ProfileItem } from './FlipbookClient';
+import WesterosMap from './WesterosMap';
 import NedGuide from '@/app/components/NedGuide';
 
 export default async function BookPage() {
@@ -115,7 +116,10 @@ export default async function BookPage() {
             </Link>
           </div>
         ) : (
-          <FlipbookClient profiles={enrichedProfiles} />
+          <>
+            <FlipbookClient profiles={enrichedProfiles} />
+            <WesterosMap profiles={enrichedProfiles} />
+          </>
         )}
       </div>
 
