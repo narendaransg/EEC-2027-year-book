@@ -2,6 +2,7 @@ import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 import Link from 'next/link';
 import { supabaseAdmin } from '@/lib/supabase';
+import { logoutCitadel } from '@/app/actions';
 import FlipbookClient, { ProfileItem } from './FlipbookClient';
 import NedGuide from '@/app/components/NedGuide';
 
@@ -72,12 +73,23 @@ export default async function BookPage() {
             </p>
           </div>
 
-          <Link
-            href="/quiz"
-            className="bg-amber-800/90 hover:bg-amber-700 text-amber-50 px-6 py-3 uppercase tracking-widest text-xs font-bold transition-colors border border-amber-400/40 shadow-lg"
-          >
-            + Claim Your House
-          </Link>
+          <div className="flex items-center gap-3">
+            <Link
+              href="/quiz"
+              className="bg-amber-800/90 hover:bg-amber-700 text-amber-50 px-6 py-3 uppercase tracking-widest text-xs font-bold transition-colors border border-amber-400/40 shadow-lg"
+            >
+              + Claim Your House
+            </Link>
+
+            <form action={logoutCitadel}>
+              <button
+                type="submit"
+                className="bg-zinc-950/80 hover:bg-red-950/80 text-amber-200/80 hover:text-red-200 px-4 py-3 uppercase tracking-widest text-xs border border-amber-500/30 transition-colors cursor-pointer"
+              >
+                Lock Gate
+              </button>
+            </form>
+          </div>
         </header>
 
         {error && (

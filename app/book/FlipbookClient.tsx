@@ -141,13 +141,13 @@ function buildChronicleHtml(
               : ''
           }
 
-          <div style="font-size: 13.5px; line-height: 1.72; color: #24140c; text-align: justify; margin-top: 10px; white-space: pre-line;">
+          <div style="font-size: 15px; line-height: 1.75; color: #24140c; text-align: justify; margin-top: 10px; white-space: pre-line;">
             <span style="float: left; font-size: 44px; line-height: 0.85; padding-right: 7px; padding-top: 4px; font-weight: bold; color: #6e2612;">${firstChar}</span>${restText}
           </div>
         </div>
 
         <div>
-          <div style="border-top: 1px solid rgba(92, 48, 20, 0.45); padding-top: 10px; font-size: 12px; color: #3b1e0e; line-height: 1.55;">
+          <div style="border-top: 1px solid rgba(92, 48, 20, 0.45); padding-top: 10px; font-size: 13px; color: #3b1e0e; line-height: 1.55;">
             <p style="margin: 0 0 5px;"><strong>Counsel to Juniors:</strong> ${profile.junior_advice}</p>
             <p style="margin: 0;"><strong>Sworn Ally in the Long Night:</strong> ${profile.apocalypse_ally}</p>
           </div>
@@ -299,7 +299,7 @@ const TocPage = React.forwardRef<
         >
           Contents
         </h3>
-        <div className="flex-1 overflow-y-auto pr-1 space-y-1.5 text-xs">
+        <div className="flex-1 overflow-y-auto pr-1 space-y-2 text-sm">
           {profiles.map((p, idx) => (
             <button
               key={p.id}
@@ -465,7 +465,7 @@ const ChroniclePage = React.forwardRef<
               </div>
             )}
 
-            <p className="text-xs md:text-[13px] leading-relaxed text-justify whitespace-pre-line mt-2 text-[#24140c]">
+            <p className="text-sm md:text-[15px] leading-relaxed text-justify whitespace-pre-line mt-2 text-[#24140c]">
               <span className="float-left text-4xl leading-[0.82] pr-2 pt-1 font-bold text-[#6e2612]">
                 {firstLetter}
               </span>
@@ -476,7 +476,7 @@ const ChroniclePage = React.forwardRef<
           <div>
             <div
               style={{ borderColor: 'rgba(92, 48, 20, 0.4)' }}
-              className="border-t pt-2 space-y-1 text-[11px] text-[#3b1e0e]"
+              className="border-t pt-2 space-y-1.5 text-xs md:text-[13px] text-[#3b1e0e]"
             >
               <p>
                 <strong>Counsel to Juniors:</strong> {profile.junior_advice}

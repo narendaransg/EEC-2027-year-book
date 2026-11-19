@@ -1,18 +1,25 @@
-'use server'
+'use server';
 
-import { cookies } from 'next/headers'
+import { cookies } from 'next/headers';
+import { redirect } from 'next/navigation';
 
 export async function verifyPasscode(formData: FormData) {
-  const code = String(formData.get('passcode') || '').trim()
-  const expected = String(process.env.BATCH_PASSCODE || '').trim()
+  const passcode = String(formData.get('passcode') || '').trim();
+  const expected = process.env.BATCH_PASSCODE;
 
-  console.log('Entered:', JSON.stringify(code), '| Expected:', JSON.stringify(expected))
-
-  if (expected && code === expected) {
-    (await cookies()).set('citadel_access', 'granted', { maxAge: 60 * 60 * 24 * 7 })
-    return { success: true }
+  if (expected && passcode === expected) {
+    const cookieStore = await cookies();
+    cookieStore.set('citadel_access', 'granted', {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      path: '/',
+      maxAge: 60 * 60 * 24 * 30,
+    });
+    return { success: true };
   }
-  return { success: false }
+
+  return { success: false };
 }
 
 export async function logoutCitadel() {
