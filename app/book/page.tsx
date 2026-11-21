@@ -1,18 +1,22 @@
-export const dynamic = 'force-dynamic';
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 import Link from 'next/link';
 import { supabaseAdmin } from '@/lib/supabase';
 import { logoutCitadel } from '@/app/actions';
+import { getSealedQuote } from '@/lib/sealedQuotes';
 import FlipbookClient, { ProfileItem } from './FlipbookClient';
 import WesterosMap from './WesterosMap';
 import NedGuide from '@/app/components/NedGuide';
+
+export const dynamic = 'force-dynamic';
 
 export default async function BookPage() {
   const cookieStore = await cookies();
   if (cookieStore.get('citadel_access')?.value !== 'granted') {
     redirect('/');
   }
+
+  const isSealed = process.env.YEARBOOK_SEALED !== 'false';
 
   const { data: profiles, error } = await supabaseAdmin
     .from('profiles')
@@ -21,6 +25,20 @@ export default async function BookPage() {
 
   const enrichedProfiles: ProfileItem[] = await Promise.all(
     (profiles || []).map(async (p) => {
+      if (isSealed) {
+        return {
+          ...p,
+          nickname: null,
+          branch: '',
+          signed_portrait_url: null,
+          house_words: 'Protected Until Graduation',
+          college_memory: getSealedQuote(String(p.id || p.name || '')),
+          junior_advice: 'Sealed until graduation — only Name & House are visible right now.',
+          apocalypse_ally: 'Sealed until graduation',
+          is_sealed: true,
+        };
+      }
+
       let signedUrl: string | null = null;
       if (p.portrait_url) {
         const { data } = await supabaseAdmin.storage
@@ -28,9 +46,11 @@ export default async function BookPage() {
           .createSignedUrl(p.portrait_url, 60 * 60);
         signedUrl = data?.signedUrl || null;
       }
+
       return {
         ...p,
         signed_portrait_url: signedUrl,
+        is_sealed: false,
       };
     })
   );
@@ -64,7 +84,7 @@ export default async function BookPage() {
 
       {/* Main Content Layer */}
       <div className="relative z-10 max-w-5xl mx-auto">
-        <header className="flex flex-col md:flex-row items-center justify-between border-b border-amber-500/30 pb-5 mb-6 gap-4">
+        <header className="flex flex-col md:flex-row items-center justify-between border-b border-amber-500/30 pb-5 mb-5 gap-4">
           <div>
             <h1 className="text-4xl text-amber-200 tracking-wide drop-shadow-[0_2px_6px_rgba(0,0,0,0.9)]">
               The Citadel Chronicles
@@ -93,6 +113,17 @@ export default async function BookPage() {
             </form>
           </div>
         </header>
+
+        {isSealed && (
+          <div className="mb-6 px-4 py-3 bg-amber-950/75 border border-amber-500/45 rounded-sm text-xs md:text-sm text-amber-100/90 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+            <span>
+              <strong>Privacy Mode On:</strong> Personal content is protected until graduation—only <strong>Name</strong> and <strong>House</strong> are shown with Citadel &amp; engineering quotes.
+            </span>
+            <span className="uppercase tracking-widest text-[10px] font-bold text-amber-300 shrink-0">
+              Sealed Until Graduation
+            </span>
+          </div>
+        )}
 
         {error && (
           <p className="text-red-400 mb-6">

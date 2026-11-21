@@ -42,10 +42,19 @@ export default async function Gatekeeper({
 
         <h1
           style={{ fontFamily: 'var(--font-cinzel), Georgia, serif' }}
-          className="text-2xl md:text-3xl text-center font-bold text-[#1f1008] mb-6"
+          className="text-2xl md:text-3xl text-center font-bold text-[#1f1008] mb-4"
         >
           Speak the Password to Enter
         </h1>
+
+        <div className="mb-5 p-3.5 bg-[#5c3118]/12 border border-[#5c3118]/45 rounded-xs text-xs leading-relaxed text-[#24140c]">
+          <p className="font-bold uppercase tracking-wider text-[#6e2612] mb-1">
+            Privacy Vault Active Until Graduation
+          </p>
+          <p>
+            Your content is protected: while we&apos;re still in college, <strong>only your Name &amp; House</strong> are shown in the book and index alongside Game of Thrones &amp; engineering quotes. Photos, memories, and personal notes stay locked until we graduate.
+          </p>
+        </div>
 
         {error && (
           <p className="text-red-900 text-center font-bold mb-4 text-sm">

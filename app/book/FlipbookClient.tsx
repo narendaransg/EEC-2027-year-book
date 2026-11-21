@@ -24,6 +24,7 @@ export interface ProfileItem {
   college_memory: string;
   junior_advice: string;
   apocalypse_ally: string;
+  is_sealed?: boolean;
 }
 
 function getSigilPath(houseName: string) {
@@ -384,6 +385,7 @@ const ChroniclePage = React.forwardRef<
     }
   }
 
+  const sealed = Boolean(profile.is_sealed);
   const memory = profile.college_memory || '';
   const firstLetter = memory.charAt(0);
   const restMemory = memory.slice(1);
@@ -432,9 +434,11 @@ const ChroniclePage = React.forwardRef<
                     &ldquo;{profile.nickname}&rdquo;
                   </p>
                 )}
-                <p className="text-[10px] uppercase tracking-widest font-bold text-[#6e3a19] mt-0.5">
-                  {profile.branch}
-                </p>
+                {!sealed && profile.branch && (
+                  <p className="text-[10px] uppercase tracking-widest font-bold text-[#6e3a19] mt-0.5">
+                    {profile.branch}
+                  </p>
+                )}
               </div>
 
               <div className="flex items-center gap-2 text-right shrink-0">
@@ -454,7 +458,7 @@ const ChroniclePage = React.forwardRef<
               </div>
             </div>
 
-            {profile.signed_portrait_url && (
+            {!sealed && profile.signed_portrait_url && (
               <div className="flex justify-center my-2.5">
                 <img
                   src={profile.signed_portrait_url}
@@ -478,12 +482,20 @@ const ChroniclePage = React.forwardRef<
               style={{ borderColor: 'rgba(92, 48, 20, 0.4)' }}
               className="border-t pt-2 space-y-1.5 text-xs md:text-[13px] text-[#3b1e0e]"
             >
-              <p>
-                <strong>Counsel to Juniors:</strong> {profile.junior_advice}
-              </p>
-              <p>
-                <strong>Sworn Ally:</strong> {profile.apocalypse_ally}
-              </p>
+              {sealed ? (
+                <p className="italic text-[#5c3118]">
+                  🔒 Personal chronicle, portrait, and notes are protected until graduation (2027). Only Name &amp; House are displayed.
+                </p>
+              ) : (
+                <>
+                  <p>
+                    <strong>Counsel to Juniors:</strong> {profile.junior_advice}
+                  </p>
+                  <p>
+                    <strong>Sworn Ally:</strong> {profile.apocalypse_ally}
+                  </p>
+                </>
+              )}
             </div>
 
             <div className="flex items-center justify-between pt-2 mt-1 text-[11px]">
