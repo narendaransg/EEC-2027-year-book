@@ -1,313 +1,377 @@
 'use client';
 
-import { useState } from 'react';
+import React, { useState, useTransition } from 'react';
 import Link from 'next/link';
+import { Search, Sparkles, Zap } from 'lucide-react';
 import { QUIZ_QUESTIONS } from '@/lib/houses';
-import { submitQuiz } from './actions';
+import { lookupProfileForReforge, submitQuiz } from './actions';
+import HouseCardStudio, { ForgedCardData } from './HouseCardStudio';
+
+const QUICK_QUESTIONS = QUIZ_QUESTIONS.filter((q) =>
+  ['q1', 'q2', 'q6'].includes(q.id)
+);
+
+type MatchedProfile = {
+  id: string;
+  name: string;
+  nickname: string | null;
+  branch: string;
+  house_name: string;
+  house_words: string;
+  sigil: string;
+};
 
 export default function QuizForm() {
-  const [loading, setLoading] = useState(false);
+  const [tab, setTab] = useState<'claim' | 'reforge'>('claim');
+  const [fullMode, setFullMode] = useState(false);
+  const [isPending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
-  const [result, setResult] = useState<{
-    studentName: string;
-    branch: string;
-    name: string;
-    words: string;
-    sigil: string;
-  } | null>(null);
+  const [forgedCard, setForgedCard] = useState<ForgedCardData | null>(null);
 
-  async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
+  // Re-forge lookup state
+  const [lookupName, setLookupName] = useState('');
+  const [lookupBranch, setLookupBranch] = useState('');
+  const [matches, setMatches] = useState<MatchedProfile[]>([]);
+  const [lookupError, setLookupError] = useState<string | null>(null);
+  const [searching, startLookup] = useTransition();
+
+  function handleClaimSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
-    setLoading(true);
     setError(null);
+    const fd = new FormData(e.currentTarget);
+    fd.set('mode', fullMode ? 'full' : 'quick');
 
-    const formData = new FormData(e.currentTarget);
-    const studentName = String(formData.get('name') || '').trim();
-    const branch = String(formData.get('branch') || '').trim();
-    const res = await submitQuiz(formData);
-
-    setLoading(false);
-    if (res.error) {
-      setError(res.error);
-    } else if (res.success && res.house) {
-      setResult({
-        studentName,
-        branch,
-        ...res.house,
-      });
-    }
+    startTransition(async () => {
+      const res = await submitQuiz(fd);
+      if (res?.error) {
+        setError(res.error);
+        return;
+      }
+      if (res?.success && res.profile) {
+        setForgedCard(res.profile);
+        window.dispatchEvent(
+          new CustomEvent('citadel:plushie', {
+            detail: {
+              action: 'fire',
+              message: `Dracarys! Claimed ${res.profile.houseName}!`,
+            },
+          })
+        );
+      }
+    });
   }
 
-  async function handleDownloadHouseCard() {
-    if (!result) return;
-    const canvas = document.createElement('canvas');
-    canvas.width = 1080;
-    canvas.height = 1350;
-    const ctx = canvas.getContext('2d');
-    if (!ctx) return;
-
-    const loadImg = (src: string) =>
-      new Promise<HTMLImageElement>((resolve, reject) => {
-        const img = new Image();
-        img.crossOrigin = 'anonymous';
-        img.onload = () => resolve(img);
-        img.onerror = reject;
-        img.src = src;
-      });
-
-    const houseKey = result.name.replace(/^House\s+/i, '').trim().toLowerCase();
-    const [leather, sigil] = await Promise.all([
-      loadImg('/assets/leather.jpg'),
-      loadImg(`/assets/sigil/${houseKey}.png`),
-    ]);
-
-    ctx.drawImage(leather, 0, 0, 1080, 1350);
-    ctx.fillStyle = 'rgba(18, 7, 3, 0.55)';
-    ctx.fillRect(0, 0, 1080, 1350);
-
-    // Gold border
-    ctx.strokeStyle = '#d4af37';
-    ctx.lineWidth = 6;
-    ctx.strokeRect(54, 54, 972, 1242);
-    ctx.lineWidth = 2;
-    ctx.strokeRect(72, 72, 936, 1206);
-
-    ctx.textAlign = 'center';
-    ctx.fillStyle = '#e6c680';
-    ctx.font = 'bold 28px Georgia, serif';
-    ctx.fillText('EASWARI ENGINEERING COLLEGE • BATCH OF 2027', 540, 160);
-
-    ctx.fillStyle = '#f5d896';
-    ctx.font = 'italic 30px Georgia, serif';
-    ctx.fillText('The Maesters Have Sorted', 540, 240);
-
-    // Sigil
-    ctx.drawImage(sigil, 340, 290, 400, 400);
-
-    ctx.fillStyle = '#f5d896';
-    ctx.font = 'bold 64px Georgia, serif';
-    ctx.fillText(result.name.toUpperCase(), 540, 780);
-
-    ctx.fillStyle = '#e6c680';
-    ctx.font = 'italic 38px Georgia, serif';
-    ctx.fillText(`"${result.words}"`, 540, 850);
-
-    ctx.fillStyle = '#ffffff';
-    ctx.font = 'bold 48px Georgia, serif';
-    ctx.fillText(result.studentName, 540, 1010);
-
-    ctx.fillStyle = '#d4af37';
-    ctx.font = '28px Georgia, serif';
-    ctx.fillText(result.branch.toUpperCase(), 540, 1065);
-
-    ctx.fillStyle = 'rgba(230, 198, 128, 0.75)';
-    ctx.font = '22px Georgia, serif';
-    ctx.fillText('THE CITADEL CHRONICLES', 540, 1210);
-
-    const link = document.createElement('a');
-    link.download = `${result.studentName.replace(/\s+/g, '_')}_${houseKey}_Card.png`;
-    link.href = canvas.toDataURL('image/png');
-    link.click();
+  function handleLookup(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    setLookupError(null);
+    setMatches([]);
+    startLookup(async () => {
+      const res = await lookupProfileForReforge(lookupName, lookupBranch);
+      if (res.error) {
+        setLookupError(res.error);
+        return;
+      }
+      setMatches((res.profiles as MatchedProfile[]) || []);
+    });
   }
 
-  if (result) {
-    const houseKey = result.name.replace(/^House\s+/i, '').trim().toLowerCase();
+  if (forgedCard) {
     return (
-      <div className="max-w-xl mx-auto text-center p-10 bg-amber-100 text-amber-950 border-2 border-amber-900/50 shadow-2xl rounded-sm">
-        <p className="uppercase tracking-widest text-xs text-amber-900/70 mb-2">
-          The Maesters Have Spoken
-        </p>
-        <img
-          src={`/assets/sigil/${houseKey}.png`}
-          alt={result.name}
-          className="w-32 h-32 object-contain mx-auto my-4 drop-shadow-lg"
+      <div className="space-y-5">
+        <HouseCardStudio
+          data={forgedCard}
+          onReset={() => {
+            setForgedCard(null);
+            setError(null);
+          }}
         />
-        <h2 className="text-4xl font-bold mb-2">{result.name}</h2>
-        <p className="italic text-xl text-amber-900 mb-6">
-          &ldquo;{result.words}&rdquo;
-        </p>
-        <p className="text-sm text-amber-900/80 mb-8">
-          Your chronicle has been etched into the Citadel archives.
-        </p>
-        <div className="flex flex-wrap justify-center gap-4">
-          <button
-            type="button"
-            onClick={handleDownloadHouseCard}
-            className="bg-[#5c3118] hover:bg-[#3f1f0d] text-amber-100 px-6 py-3 uppercase tracking-widest text-xs font-bold cursor-pointer transition-colors"
-          >
-            Download House Card (PNG)
-          </button>
+        <div className="text-center">
           <Link
             href="/book"
-            className="inline-block bg-amber-900 hover:bg-amber-950 text-amber-50 px-8 py-3 uppercase tracking-widest text-xs font-bold transition-colors"
+            className="inline-block text-xs uppercase tracking-widest text-amber-300 hover:text-amber-100 underline"
           >
-            Open the Yearbook
+            Back to The Citadel Chronicles →
           </Link>
         </div>
       </div>
     );
   }
 
+  const questionsToRender = fullMode ? QUIZ_QUESTIONS : QUICK_QUESTIONS;
+
   return (
-    <form onSubmit={handleSubmit} className="space-y-10">
-      {error && (
-        <div className="p-4 bg-red-950/60 border border-red-700 text-red-200 text-sm">
-          {error}
-        </div>
-      )}
+    <div className="space-y-6">
+      {/* Mode Switcher: 15s Quick Claim vs Re-forge Old Card */}
+      <div className="grid grid-cols-2 gap-2 p-1 rounded-sm bg-black/65 border border-amber-700/40">
+        <button
+          type="button"
+          onClick={() => setTab('claim')}
+          className={`flex items-center justify-center gap-2 py-2.5 px-4 rounded-sm text-xs uppercase tracking-wider font-bold cursor-pointer transition-colors ${
+            tab === 'claim'
+              ? 'bg-amber-800 text-amber-50 border border-amber-400/60'
+              : 'text-amber-200/75 hover:text-amber-100'
+          }`}
+        >
+          <Zap className="w-3.5 h-3.5 text-amber-300" />
+          <span>15s Quick Claim</span>
+        </button>
+        <button
+          type="button"
+          onClick={() => setTab('reforge')}
+          className={`flex items-center justify-center gap-2 py-2.5 px-4 rounded-sm text-xs uppercase tracking-wider font-bold cursor-pointer transition-colors ${
+            tab === 'reforge'
+              ? 'bg-amber-800 text-amber-50 border border-amber-400/60'
+              : 'text-amber-200/75 hover:text-amber-100'
+          }`}
+        >
+          <Sparkles className="w-3.5 h-3.5 text-amber-300" />
+          <span>Already Filled? Re-forge Card</span>
+        </button>
+      </div>
 
-      {/* Part 1: Identity */}
-      <section className="p-6 md:p-8 bg-zinc-900/80 border border-amber-900/40 rounded-sm space-y-5">
-        <h2 className="text-2xl text-amber-200 border-b border-amber-900/40 pb-2">
-          I. Identity of the Scribe
-        </h2>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+      {tab === 'reforge' ? (
+        <div className="p-5 md:p-6 rounded-sm bg-[#1c0d06]/95 border border-amber-500/35 shadow-2xl space-y-4">
           <div>
-            <label className="block text-sm text-amber-200/80 mb-1">
-              Full Name *
-            </label>
-            <input
-              name="name"
-              required
-              placeholder="e.g., Jon Snow"
-              className="w-full p-3 bg-zinc-950 border border-amber-900/50 text-amber-50"
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm text-amber-200/80 mb-1">
-              College Nickname / Alias (Optional)
-            </label>
-            <input
-              name="nickname"
-              placeholder="e.g., The Night Owl"
-              className="w-full p-3 bg-zinc-950 border border-amber-900/50 text-amber-50"
-            />
-          </div>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-          <div>
-            <label className="block text-sm text-amber-200/80 mb-1">
-              Branch / Specialization *
-            </label>
-            <input
-              name="branch"
-              required
-              placeholder="e.g., ECE, CSE, Mech"
-              className="w-full p-3 bg-zinc-950 border border-amber-900/50 text-amber-50"
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm text-amber-200/80 mb-1">
-              Portrait Photo (Optional, max 5MB)
-            </label>
-            <input
-              type="file"
-              name="portrait"
-              accept="image/*"
-              className="w-full p-2.5 bg-zinc-950 border border-amber-900/50 text-amber-100 text-sm file:mr-3 file:bg-amber-900 file:text-amber-50 file:border-0 file:px-3 file:py-1"
-            />
-          </div>
-        </div>
-      </section>
-
-      {/* Part 2: Sorting Questions */}
-      <section className="p-6 md:p-8 bg-zinc-900/80 border border-amber-900/40 rounded-sm space-y-8">
-        <h2 className="text-2xl text-amber-200 border-b border-amber-900/40 pb-2">
-          II. The Sorting Trials
-        </h2>
-
-        {QUIZ_QUESTIONS.map((q, qIdx) => (
-          <div key={q.id} className="space-y-3">
-            <p className="text-lg text-amber-100">
-              {qIdx + 1}. {q.question}
+            <h2 className="text-lg uppercase tracking-widest text-amber-300 font-bold">
+              Find Your Existing Entry
+            </h2>
+            <p className="text-xs text-amber-200/75 mt-1">
+              Already submitted your yearbook entry earlier? Look up your name and forge a new Valyrian, Parchment, or Dragonfire card.
             </p>
-            <div className="grid grid-cols-1 gap-2">
-              {q.options.map((opt, optIdx) => (
-                <label
-                  key={optIdx}
-                  className="flex items-start gap-3 p-3 bg-zinc-950/70 border border-amber-900/30 hover:border-amber-600/60 cursor-pointer transition-colors"
+          </div>
+
+          <form onSubmit={handleLookup} className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <input
+              value={lookupName}
+              onChange={(e) => setLookupName(e.target.value)}
+              required
+              placeholder="Your Name"
+              className="px-3.5 py-2.5 rounded-sm bg-black/65 border border-amber-700/50 text-amber-50 text-sm"
+            />
+            <input
+              value={lookupBranch}
+              onChange={(e) => setLookupBranch(e.target.value)}
+              placeholder="Dept (e.g., ECE, CSE)"
+              className="px-3.5 py-2.5 rounded-sm bg-black/65 border border-amber-700/50 text-amber-50 text-sm"
+            />
+            <button
+              type="submit"
+              disabled={searching}
+              className="flex items-center justify-center gap-1.5 bg-amber-800 hover:bg-amber-700 text-amber-50 px-4 py-2.5 rounded-sm uppercase tracking-wider text-xs font-bold border border-amber-400/40 cursor-pointer"
+            >
+              <Search className="w-3.5 h-3.5" />
+              <span>{searching ? 'Searching...' : 'Find Entry'}</span>
+            </button>
+          </form>
+
+          {lookupError && <p className="text-xs text-red-400">{lookupError}</p>}
+
+          {matches.length > 0 && (
+            <div className="space-y-2.5 pt-2">
+              {matches.map((m) => (
+                <div
+                  key={m.id}
+                  className="p-3.5 rounded-sm bg-black/60 border border-amber-600/35 flex flex-wrap items-center justify-between gap-3"
                 >
-                  <input
-                    type="radio"
-                    name={q.id}
-                    value={optIdx}
-                    required
-                    className="mt-1 accent-amber-600"
-                  />
-                  <span className="text-sm text-amber-100/90">{opt.label}</span>
-                </label>
+                  <div>
+                    <div className="text-sm font-bold text-amber-100">
+                      {m.name}{' '}
+                      <span className="text-xs font-normal text-amber-300/80">
+                        ({m.branch})
+                      </span>
+                    </div>
+                    <div className="text-xs text-amber-200/80">
+                      {m.house_name} — &ldquo;{m.house_words}&rdquo;
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setForgedCard({
+                        name: m.name,
+                        branch: m.branch,
+                        houseName: m.house_name,
+                        houseWords: m.house_words,
+                        sigil: m.sigil,
+                      })
+                    }
+                    className="px-4 py-2 rounded-sm bg-amber-700 hover:bg-amber-600 text-white text-xs uppercase tracking-wider font-bold cursor-pointer"
+                  >
+                    Open Card Studio
+                  </button>
+                </div>
               ))}
             </div>
+          )}
+        </div>
+      ) : (
+        <form
+          onSubmit={handleClaimSubmit}
+          className="p-5 md:p-7 rounded-sm bg-[#1c0d06]/95 border border-amber-500/35 shadow-2xl space-y-6"
+        >
+          <div className="flex flex-wrap items-center justify-between gap-2 border-b border-amber-800/40 pb-4">
+            <div>
+              <h2 className="text-lg uppercase tracking-widest text-amber-300 font-bold">
+                {fullMode ? 'Full Chronicle & Sorting' : '15-Second Quick Claim'}
+              </h2>
+              <p className="text-xs text-amber-200/75 mt-0.5">
+                {fullMode
+                  ? 'All 6 questions + memories, advice & portrait'
+                  : 'Just Name, Dept & 3 picks—add full memories later or toggle Full Mode'}
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={() => setFullMode((v) => !v)}
+              className="px-3 py-1.5 rounded-sm bg-black/60 hover:bg-black/80 border border-amber-600/40 text-[11px] uppercase tracking-wider text-amber-200 cursor-pointer"
+            >
+              {fullMode ? 'Switch to 15s Quick Claim' : 'Full 6-Question Mode'}
+            </button>
           </div>
-        ))}
-      </section>
 
-      {/* Part 3: The Chronicles */}
-      <section className="p-6 md:p-8 bg-zinc-900/80 border border-amber-900/40 rounded-sm space-y-5">
-        <h2 className="text-2xl text-amber-200 border-b border-amber-900/40 pb-2">
-          III. Your Chronicles
-        </h2>
+          {/* Core Identity */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-xs uppercase tracking-wider text-amber-200 mb-1">
+                Full Name *
+              </label>
+              <input
+                name="name"
+                required
+                placeholder="e.g., Narendaran S G"
+                className="w-full px-3.5 py-2.5 rounded-sm bg-black/65 border border-amber-700/50 text-amber-50 text-sm"
+              />
+            </div>
 
-        <div>
-          <label className="block text-sm text-amber-200/80 mb-1">
-            Custom House Words (Optional — leave blank to use your House motto)
-          </label>
-          <input
-            name="custom_words"
-            placeholder="e.g., Caffeine and Deadlines"
-            className="w-full p-3 bg-zinc-950 border border-amber-900/50 text-amber-50"
-          />
-        </div>
+            <div>
+              <label className="block text-xs uppercase tracking-wider text-amber-200 mb-1">
+                Department / Branch *
+              </label>
+              <input
+                name="branch"
+                required
+                placeholder="e.g., ECE, CSE, Mech, IT"
+                className="w-full px-3.5 py-2.5 rounded-sm bg-black/65 border border-amber-700/50 text-amber-50 text-sm"
+              />
+            </div>
+          </div>
 
-        <div>
-          <label className="block text-sm text-amber-200/80 mb-1">
-            Most Legendary College Memory *
-          </label>
-          <textarea
-            name="college_memory"
-            required
-            rows={4}
-            placeholder="Write a short paragraph about a moment you'll never forget..."
-            className="w-full p-3 bg-zinc-950 border border-amber-900/50 text-amber-50"
-          />
-        </div>
+          {fullMode && (
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-xs uppercase tracking-wider text-amber-200 mb-1">
+                  Nickname / Callsign
+                </label>
+                <input
+                  name="nickname"
+                  placeholder="Optional"
+                  className="w-full px-3.5 py-2.5 rounded-sm bg-black/65 border border-amber-700/50 text-amber-50 text-sm"
+                />
+              </div>
 
-        <div>
-          <label className="block text-sm text-amber-200/80 mb-1">
-            One Unfiltered Piece of Advice for Juniors *
-          </label>
-          <input
-            name="junior_advice"
-            required
-            placeholder="1–2 lines of real wisdom..."
-            className="w-full p-3 bg-zinc-950 border border-amber-900/50 text-amber-50"
-          />
-        </div>
+              <div>
+                <label className="block text-xs uppercase tracking-wider text-amber-200 mb-1">
+                  Custom House Words (Optional)
+                </label>
+                <input
+                  name="custom_words"
+                  placeholder="Leave blank for default House words"
+                  className="w-full px-3.5 py-2.5 rounded-sm bg-black/65 border border-amber-700/50 text-amber-50 text-sm"
+                />
+              </div>
+            </div>
+          )}
 
-        <div>
-          <label className="block text-sm text-amber-200/80 mb-1">
-            Who in this batch would you trust in a zombie apocalypse? *
-          </label>
-          <input
-            name="apocalypse_ally"
-            required
-            placeholder="Shoutout a friend..."
-            className="w-full p-3 bg-zinc-950 border border-amber-900/50 text-amber-50"
-          />
-        </div>
-      </section>
+          {/* Sorting Questions */}
+          <div className="space-y-5">
+            {questionsToRender.map((q, idx) => (
+              <div key={q.id} className="space-y-2">
+                <p className="text-sm font-semibold text-amber-100">
+                  {idx + 1}. {q.question}
+                </p>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                  {q.options.map((opt, optIdx) => (
+                    <label
+                      key={optIdx}
+                      className="flex items-start gap-2.5 p-2.5 rounded-sm bg-black/55 hover:bg-amber-950/50 border border-amber-800/40 text-xs text-amber-100/90 cursor-pointer"
+                    >
+                      <input
+                        type="radio"
+                        name={q.id}
+                        value={optIdx}
+                        required
+                        className="mt-0.5 accent-amber-500"
+                      />
+                      <span>{opt.label}</span>
+                    </label>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
 
-      <button
-        type="submit"
-        disabled={loading}
-        className="w-full bg-amber-800 hover:bg-amber-700 disabled:opacity-50 text-amber-50 py-4 uppercase tracking-widest text-sm font-bold border border-amber-500/40 cursor-pointer transition-colors"
-      >
-        {loading ? 'Consulting the Maesters...' : 'Claim My House & Seal Chronicle'}
-      </button>
-    </form>
+          {fullMode && (
+            <div className="space-y-4 pt-2 border-t border-amber-800/40">
+              <div>
+                <label className="block text-xs uppercase tracking-wider text-amber-200 mb-1">
+                  Favorite College Memory *
+                </label>
+                <textarea
+                  name="college_memory"
+                  required={fullMode}
+                  rows={2}
+                  className="w-full px-3.5 py-2 rounded-sm bg-black/65 border border-amber-700/50 text-amber-50 text-sm"
+                />
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs uppercase tracking-wider text-amber-200 mb-1">
+                    Advice for Juniors *
+                  </label>
+                  <input
+                    name="junior_advice"
+                    required={fullMode}
+                    className="w-full px-3.5 py-2.5 rounded-sm bg-black/65 border border-amber-700/50 text-amber-50 text-sm"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs uppercase tracking-wider text-amber-200 mb-1">
+                    Apocalypse Ally *
+                  </label>
+                  <input
+                    name="apocalypse_ally"
+                    required={fullMode}
+                    className="w-full px-3.5 py-2.5 rounded-sm bg-black/65 border border-amber-700/50 text-amber-50 text-sm"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs uppercase tracking-wider text-amber-200 mb-1">
+                  Portrait (Optional)
+                </label>
+                <input
+                  type="file"
+                  name="portrait"
+                  accept="image/*"
+                  className="text-xs text-amber-200/80"
+                />
+              </div>
+            </div>
+          )}
+
+          {error && <p className="text-xs text-red-400">{error}</p>}
+
+          <button
+            type="submit"
+            disabled={isPending}
+            className="w-full sm:w-auto bg-amber-800 hover:bg-amber-700 disabled:opacity-50 text-amber-50 px-8 py-3 rounded-sm uppercase tracking-widest text-xs font-bold border border-amber-400/40 shadow-lg cursor-pointer"
+          >
+            {isPending ? 'Sorting Your House...' : 'Claim House & Open Card Forge'}
+          </button>
+        </form>
+      )}
+    </div>
   );
 }

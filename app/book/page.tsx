@@ -5,8 +5,6 @@ import { supabaseAdmin } from '@/lib/supabase';
 import { logoutCitadel } from '@/app/actions';
 import { getSealedQuote } from '@/lib/sealedQuotes';
 import FlipbookClient, { ProfileItem } from './FlipbookClient';
-import WesterosMap from './WesterosMap';
-import NedGuide from '@/app/components/NedGuide';
 
 export const dynamic = 'force-dynamic';
 
@@ -65,7 +63,6 @@ export default async function BookPage() {
       }}
       className="relative min-h-screen text-amber-50 p-6 md:p-10 font-serif overflow-x-hidden"
     >
-      {/* Flaming Glow & Rising Embers at the Bottom Behind the Desk */}
       <div className="fixed inset-x-0 bottom-0 h-56 pointer-events-none z-0 overflow-hidden">
         <div
           style={{
@@ -82,7 +79,6 @@ export default async function BookPage() {
         <span className="ember" style={{ left: '88%', animationDelay: '1.7s' }} />
       </div>
 
-      {/* Main Content Layer */}
       <div className="relative z-10 max-w-5xl mx-auto">
         <header className="flex flex-col md:flex-row items-center justify-between border-b border-amber-500/30 pb-5 mb-5 gap-4">
           <div>
@@ -147,14 +143,9 @@ export default async function BookPage() {
             </Link>
           </div>
         ) : (
-          <>
-            <FlipbookClient profiles={enrichedProfiles} />
-            <WesterosMap profiles={enrichedProfiles} />
-          </>
+          <FlipbookClient profiles={enrichedProfiles} />
         )}
       </div>
-
-      <NedGuide mode="book" />
     </div>
   );
 }

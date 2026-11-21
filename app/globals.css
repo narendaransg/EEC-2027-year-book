@@ -44,3 +44,187 @@
   box-shadow: 0 0 8px 2px #ea580c;
   animation: emberRise 4s linear infinite;
 }
+
+/* --- Phase 1: Route Entry Animations & Reactive Plushie --- */
+@keyframes tomeUnseal {
+  0% {
+    opacity: 0;
+    transform: translateY(26px) scale(0.93);
+    filter: brightness(1.32) blur(3px);
+  }
+  60% {
+    opacity: 0.92;
+    filter: brightness(1.06) blur(0px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+    filter: brightness(1) blur(0px);
+  }
+}
+
+@keyframes cloudPartLeft {
+  0% {
+    opacity: 0.96;
+    transform: translateX(0) scale(1.05);
+  }
+  35% {
+    opacity: 0.9;
+  }
+  100% {
+    opacity: 0;
+    transform: translateX(-52vw) scale(1.25);
+  }
+}
+
+@keyframes cloudPartRight {
+  0% {
+    opacity: 0.96;
+    transform: translateX(0) scale(1.05);
+  }
+  35% {
+    opacity: 0.9;
+  }
+  100% {
+    opacity: 0;
+    transform: translateX(52vw) scale(1.25);
+  }
+}
+
+@keyframes lanternFlare {
+  0% {
+    opacity: 0;
+    transform: scale(0.94);
+    filter: brightness(0.6);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.03);
+    filter: brightness(1.25);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+    filter: brightness(1);
+  }
+}
+
+@keyframes waxStampIn {
+  0% {
+    opacity: 0;
+    transform: translateY(-28px) scale(1.18) rotate(-6deg);
+    filter: blur(2px);
+  }
+  72% {
+    opacity: 1;
+    transform: translateY(4px) scale(0.98) rotate(1.5deg);
+    filter: blur(0px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1) rotate(0deg);
+  }
+}
+
+@keyframes forgeSpark {
+  0% {
+    opacity: 0;
+    transform: scale(0.96);
+    box-shadow: 0 0 0 rgba(251, 191, 36, 0);
+  }
+  50% {
+    opacity: 1;
+    box-shadow: 0 0 42px rgba(245, 158, 11, 0.55);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+    box-shadow: 0 0 0 rgba(251, 191, 36, 0);
+  }
+}
+
+@keyframes plushieDance {
+  0%, 100% {
+    transform: translateY(0) rotate(-5deg) scaleX(1.05) scaleY(0.95);
+  }
+  25% {
+    transform: translateY(-13px) rotate(6deg) scaleX(0.95) scaleY(1.06);
+  }
+  50% {
+    transform: translateY(-3px) rotate(-6deg) scaleX(1.06) scaleY(0.94);
+  }
+  75% {
+    transform: translateY(-14px) rotate(5deg) scaleX(0.96) scaleY(1.05);
+  }
+}
+
+@keyframes noteFloat {
+  0% {
+    opacity: 0;
+    transform: translateY(6px) scale(0.8);
+  }
+  30% {
+    opacity: 0.95;
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(-32px) translateX(10px) scale(1.2);
+  }
+}
+
+@keyframes pageChompShake {
+  0%, 100% { transform: translate(0, 0) rotate(0deg); }
+  20% { transform: translate(-5px, 3px) rotate(-0.4deg); }
+  45% { transform: translate(5px, -3px) rotate(0.4deg); }
+  70% { transform: translate(-3px, 2px) rotate(-0.2deg); }
+}
+
+.anim-tome-unseal {
+  animation: tomeUnseal 1.35s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.anim-cloud-left {
+  animation: cloudPartLeft 2.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.anim-cloud-right {
+  animation: cloudPartRight 2.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.anim-lantern-flare {
+  animation: lanternFlare 1.6s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.anim-wax-stamp {
+  animation: waxStampIn 1.3s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.anim-forge-spark {
+  animation: forgeSpark 1.5s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.anim-plushie-dance {
+  animation: plushieDance 0.72s ease-in-out infinite;
+}
+
+.anim-note-float {
+  animation: noteFloat 1.5s ease-out infinite;
+}
+
+.citadel-chomp-shake {
+  animation: pageChompShake 0.32s ease-in-out;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .anim-tome-unseal,
+  .anim-cloud-left,
+  .anim-cloud-right,
+  .anim-lantern-flare,
+  .anim-wax-stamp,
+  .anim-forge-spark,
+  .anim-plushie-dance,
+  .anim-note-float,
+  .citadel-chomp-shake {
+    animation: none !important;
+  }
+}
